@@ -1,7 +1,10 @@
  
 export class InMemoryRepository<T extends { id: number }> {
- 
   private items: T[] = [];
+
+  constructor(items?: T[]) {
+    this.items = items ?? [];
+  }
  
   add(entity: T): T {
    

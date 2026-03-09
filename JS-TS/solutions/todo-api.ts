@@ -17,8 +17,12 @@ const randomDelay = (): number => {
 };
 
 export class TodoApi {
-  private repo = new InMemoryRepository<Todo>();
+  private repo: InMemoryRepository<Todo>;
   private nextId = 1;
+
+  constructor(repo?: InMemoryRepository<Todo>) {
+    this.repo = repo ?? new InMemoryRepository<Todo>();
+  }
 
   async getAll(): Promise<Todo[]> {
     try {
