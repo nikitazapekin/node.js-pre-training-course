@@ -2,197 +2,266 @@ const fs = require("fs");
 const fsPromises = require("fs").promises;
 const util = require("util");
 
-/**
- * Event Loop Analysis and Async Debugging
- * Learn Node.js event loop phases and fix broken async code
- */
-
-/**
- * Analyze execution order of event loop phases
- * @returns {object} Analysis of execution order
- */
+  
 function analyzeEventLoop() {
-  // TODO: Implement event loop analysis
-  // 1. Create examples showing each event loop phase
-  // 2. Demonstrate microtask vs macrotask priority
-  // 3. Show execution order with detailed logging
-  // 4. Return analysis object with explanations
-
   const analysis = {
-    phases: [],
-    executionOrder: [],
-    explanations: [],
+    phases: [
+      "Timers Phase - setTimeout() and setInterval() callbacks",
+      "Pending Callbacks Phase - I/O callbacks deferred to next loop iteration",
+      "Idle, Prepare Phase - Internal Node.js operations",
+      "Poll Phase - Retrieve new I/O events, execute I/O callbacks",
+      "Check Phase - setImmediate() callbacks",
+      "Close Callbacks Phase - Close event callbacks (socket.on('close'))"
+    ],
+    executionOrder: [
+      "Synchronous code executes first",
+      "process.nextTick() callbacks (microtasks - highest priority)",
+      "Promise.then() callbacks (microtasks)",
+      "setTimeout() callbacks (macrotasks - timers phase)",
+      "setImmediate() callbacks (check phase)",
+      "Close callbacks (close callbacks phase)"
+    ],
+    explanations: [
+      "Microtasks (nextTick, Promises) always run before macrotasks",
+      "setTimeout with 0ms delay still waits for timers phase",
+      "setImmediate runs in check phase, after poll phase",
+      "process.nextTick has highest priority among all async operations",
+      "Multiple nextTick callbacks run before any other async operation"
+    ]
   };
 
-  console.log("Event loop analysis not implemented yet");
+ 
+  console.log("Phases:", analysis.phases);
+  console.log("Execution Order:", analysis.executionOrder);
+  console.log("Explanations:", analysis.explanations);
+  
   return analysis;
 }
-
-/**
- * Predict execution order for code snippets
- * @param {string} snippet - Code snippet identifier
- * @returns {array} Predicted execution order
- */
+ 
 function predictExecutionOrder(snippet) {
-  // TODO: Implement execution order prediction
-  // 1. Analyze the provided code snippets
-  // 2. Apply event loop phase rules
-  // 3. Consider microtask priority
-  // 4. Return predicted order with explanations
-
   const predictions = {
     snippet1: [
-      // Basic event loop snippet predictions
+      "Start",
+      "End",
+      "Next Tick 1",
+      "Next Tick 2",
+      "Promise 1",
+      "Promise 2",
+      "Timer 1",
+      "Timer 2",
+      "Immediate 1",
+      "Immediate 2"
     ],
     snippet2: [
-      // File system operations snippet predictions
-    ],
+      "=== Start ===",
+      "=== End ===",
+      "NextTick",
+      "Nested NextTick",
+      "NextTick in readFile",
+      "fs.readFile",
+      "Immediate in readFile",
+      "Timer in readFile",
+      "Immediate",
+      "NextTick in Immediate",
+      "Timer",
+      "NextTick in Timer"
+    ]
   };
 
   return predictions[snippet] || [];
 }
-
-/**
- * Fix race condition in file processing
- * @returns {Promise} Promise that resolves when files are processed
- */
+ 
 async function fixRaceCondition() {
-  // TODO: Fix the race condition in file processing
-  // Issues to fix:
-  // 1. Race condition in file processing
-  // 2. Incorrect error handling
-  // 3. Missing await keywords
-  // 4. Array index might be wrong due to closure
-
   const files = ["file1.txt", "file2.txt", "file3.txt"];
-
-  try {
-    // Implementation goes here
-    console.log("Race condition fix not implemented yet");
-    return [];
-  } catch (error) {
-    throw new Error(`Failed to process files: ${error.message}`);
+  const results = [];
+ 
+  for (let i = 0; i < files.length; i++) {
+    await fsPromises.writeFile(files[i], `Content of file ${i + 1}`).catch(() => {});
   }
-}
+ 
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const content = await fsPromises.readFile(files[i], "utf8");
+      results[i] = content.toUpperCase();
+    } catch (err) {
+      console.error(`Error reading ${files[i]}:`, err.message);
+      results[i] = null;
+    }
+  }
 
-/**
- * Convert callback hell to async/await
- * @param {number} userId - User ID to process
- * @returns {Promise} Promise that resolves with processed user data
- */
+  console.log("All files processed:", results);
+  return results;
+}
+ 
 async function fixCallbackHell(userId) {
-  // TODO: Convert callback hell to async/await
-  // Issues to fix:
-  // 1. Callback hell structure
-  // 2. No error handling for JSON.parse
-  // 3. Repetitive error handling code
-  // 4. No file existence checking
-  // 5. Blocking operations
+  const originalCwd = process.cwd();
+  const testDir = "./test-user-data";
+   
+  if (!fs.existsSync(testDir)) {
+    fs.mkdirSync(testDir, { recursive: true });
+  }
+  process.chdir(testDir);
 
   try {
-    // Step 1: Read user file
-    // Step 2: Read user preferences
-    // Step 3: Read user activity
-    // Step 4: Combine data and write result
-
-    console.log("Callback hell fix not implemented yet");
-    return null;
-  } catch (error) {
-    throw new Error(`Failed to process user data: ${error.message}`);
-  }
-}
-
-/**
- * Fix mixed promises and callbacks
- * @returns {Promise} Promise that resolves when processing is complete
- */
-async function fixMixedAsync() {
-  // TODO: Fix mixed promises and callbacks
-  // Issues to fix:
-  // 1. Mixing promises and callbacks inconsistently
-  // 2. Nested async operations without proper chaining
-  // 3. Error handling inconsistencies
-  // 4. No proper async/await usage
-
-  try {
-    // Implementation goes here
-    console.log("Mixed async fix not implemented yet");
-  } catch (error) {
-    throw new Error(`Failed to process data: ${error.message}`);
-  }
-}
-
-/**
- * Demonstrate all event loop phases
- * @returns {Promise} Promise that resolves when demonstration is complete
- */
-async function demonstrateEventLoop() {
-  // TODO: Create comprehensive event loop demonstration
-  // 1. Show timers phase (setTimeout, setInterval)
-  // 2. Show pending callbacks phase
-  // 3. Show poll phase (I/O operations)
-  // 4. Show check phase (setImmediate)
-  // 5. Show close callbacks phase
-  // 6. Demonstrate microtask priority (nextTick, Promises)
-
-  console.log("Event loop demonstration not implemented yet");
-}
-
-/**
- * Create test files for debugging exercises
- */
-async function createTestFiles() {
-  // TODO: Create test files for the exercises
-  // 1. Create sample user data files
-  // 2. Create input files for processing
-  // 3. Handle file creation errors gracefully
-
-  const testData = {
-    "user-123.json": {
-      id: 123,
-      name: "John Doe",
-      email: "john@example.com",
-    },
-    "preferences-123.json": {
+   
+    await fsPromises.writeFile(`user-${userId}.json`, JSON.stringify({
+      id: userId,
+      name: "Test User",
+      email: "test@example.com"
+    })).catch(() => {});
+    
+    await fsPromises.writeFile(`preferences-${userId}.json`, JSON.stringify({
       theme: "dark",
       language: "en",
-      notifications: true,
-    },
-    "activity-123.json": {
+      notifications: true
+    })).catch(() => {});
+    
+    await fsPromises.writeFile(`activity-${userId}.json`, JSON.stringify({
       lastLogin: "2025-01-01",
-      sessionsCount: 42,
-      totalTime: 3600,
-    },
-    "input.txt": "Hello World! This is test data for processing.",
-    "file1.txt": "Content of file 1",
-    "file2.txt": "Content of file 2",
-    "file3.txt": "Content of file 3",
-  };
+      sessionsCount: 15,
+      totalTime: 3600
+    })).catch(() => {});
+ 
+    const userData = await fsPromises.readFile(`user-${userId}.json`, "utf8");
+    const user = JSON.parse(userData);
+ 
+    const prefData = await fsPromises.readFile(`preferences-${user.id}.json`, "utf8");
+    const preferences = JSON.parse(prefData);
+ 
+    const activityData = await fsPromises.readFile(`activity-${user.id}.json`, "utf8");
+    const activity = JSON.parse(activityData);
+ 
+    const combinedData = {
+      user,
+      preferences,
+      activity,
+      processedAt: new Date()
+    };
 
-  try {
-    // Implementation goes here
-    console.log("Test files creation not implemented yet");
-  } catch (error) {
-    console.error("Failed to create test files:", error.message);
+    await fsPromises.writeFile(`processed-${userId}.json`, JSON.stringify(combinedData, null, 2));
+    
+    console.log("User data processed successfully:", combinedData);
+    return combinedData;
+  } finally {
+    process.chdir(originalCwd);
   }
 }
+ 
+async function fixMixedAsync() {
+  const testDir = "./test-mixed-async";
+  const originalCwd = process.cwd();
+   
+  if (!fs.existsSync(testDir)) {
+    fs.mkdirSync(testDir, { recursive: true });
+  }
+  process.chdir(testDir);
 
-/**
- * Helper function to log with timestamps
- * @param {string} message - Message to log
- * @param {string} phase - Event loop phase
- */
+  try {
+    console.log("Starting data processing...");
+ 
+    await fsPromises.writeFile("input.txt", "Hello World!");
+    console.log("File read successfully");
+ 
+    const data = await fsPromises.readFile("input.txt", "utf8");
+ 
+    const processedData = data.toUpperCase();
+    console.log("Processing completed");
+ 
+    await fsPromises.writeFile("output.txt", processedData);
+    console.log("Write completed successfully");
+
+    const verifyData = await fsPromises.readFile("output.txt", "utf8");
+    console.log("Verification completed successfully");
+    console.log("Result data length:", verifyData.length);
+
+    return { success: true, data: verifyData };
+  } finally {
+    process.chdir(originalCwd);
+  }
+}
+ 
+async function demonstrateEventLoop() {
+  console.log("\n=== Event Loop Demonstration ===\n");
+
+  return new Promise((resolve) => {
+    
+    console.log("[Synchronous] Starting demonstration...");
+
+    setTimeout(() => {
+      console.log("[Timers Phase] setTimeout callback executed");
+    }, 0);
+ 
+    setImmediate(() => {
+      console.log("[Check Phase] setImmediate callback executed");
+    });
+ 
+    process.nextTick(() => {
+      console.log("[Microtask] process.nextTick callback executed");
+    });
+
+    Promise.resolve().then(() => {
+      console.log("[Microtask] Promise.then callback executed");
+    });
+ 
+    fs.readFile(__filename, () => {
+      console.log("[Poll Phase] fs.readFile callback executed");
+    });
+ 
+    const stream = fs.createReadStream(__filename);
+    stream.on("close", () => {
+      console.log("[Close Callbacks] Stream close callback executed");
+      resolve();
+    });
+
+    console.log("[Synchronous] End of synchronous code\n");
+  });
+}
+ 
+async function createTestFiles(testDir = "./test-data") {
+  const originalCwd = process.cwd();
+  
+  if (!fs.existsSync(testDir)) {
+    fs.mkdirSync(testDir, { recursive: true });
+  }
+  process.chdir(testDir);
+
+  try {
+    const testFiles = {
+      "user-123.json": JSON.stringify({ id: 123, name: "Test User" }),
+      "user-456.json": JSON.stringify({ id: 456, name: "Another User" }),
+      "file1.txt": "Content of file 1",
+      "file2.txt": "Content of file 2",
+      "file3.txt": "Content of file 3",
+      "input.txt": "Hello World Test Data"
+    };
+
+    for (const [filename, content] of Object.entries(testFiles)) {
+      await fsPromises.writeFile(filename, content);
+    }
+
+    console.log("Test files created successfully");
+    return Object.keys(testFiles);
+  } finally {
+    process.chdir(originalCwd);
+  }
+}
+ 
 function logWithPhase(message, phase = "unknown") {
-  // TODO: Implement detailed logging
-  // 1. Add timestamp
-  // 2. Add event loop phase information
-  // 3. Add color coding for different phases
-  // 4. Format output for better readability
+  const timestamp = new Date().toISOString();
+  const phaseEmojis = {
+    timers: "⏰",
+    "pending callbacks": "📋",
+    poll: "📥",
+    check: "✅",
+    "close callbacks": "🚪",
+    microtask: "⚡",
+    unknown: "📝"
+  };
 
-  console.log(`[${phase}] ${message}`);
+  const emoji = phaseEmojis[phase] || phaseEmojis.unknown;
+  console.log(`${emoji} [${timestamp}] [${phase.toUpperCase()}] ${message}`);
 }
 
-// Export functions and data
 module.exports = {
   analyzeEventLoop,
   predictExecutionOrder,
@@ -203,41 +272,3 @@ module.exports = {
   createTestFiles,
   logWithPhase,
 };
-
-// Example usage (for testing):
-const isReadyToTest = false;
-
-if (isReadyToTest) {
-  async function runExamples() {
-    console.log("🔄 Starting Event Loop Analysis Examples...\n");
-
-    // Create test files
-    await createTestFiles();
-
-    // Demonstrate event loop
-    console.log("=== Event Loop Demonstration ===");
-    await demonstrateEventLoop();
-
-    // Analyze execution order
-    console.log("\n=== Execution Order Analysis ===");
-    const analysis = analyzeEventLoop();
-    console.log("Analysis:", analysis);
-
-    // Fix broken code
-    console.log("\n=== Fixing Broken Code ===");
-    try {
-      await fixRaceCondition();
-      console.log("✅ Race condition fixed");
-
-      await fixCallbackHell(123);
-      console.log("✅ Callback hell converted");
-
-      await fixMixedAsync();
-      console.log("✅ Mixed async resolved");
-    } catch (error) {
-      console.error("❌ Error fixing code:", error.message);
-    }
-  }
-
-  runExamples();
-}

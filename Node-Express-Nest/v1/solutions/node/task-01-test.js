@@ -1,7 +1,3 @@
-/**
- * Test suite for Task 01 - Custom Event Emitter
- * Run this after implementing your MessageSystem to verify functionality
- */
 
 const MessageSystem = require("./task-01");
 
@@ -10,10 +6,7 @@ class MessageSystemTester {
     this.testResults = [];
     this.messenger = new MessageSystem();
   }
-
-  /**
-   * Run a single test case
-   */
+ 
   async runTest(name, testFunction) {
     try {
       console.log(`🧪 Running: ${name}`);
@@ -25,14 +18,10 @@ class MessageSystemTester {
       this.testResults.push({ name, status: "FAIL", error: error.message });
     }
   }
-
-  /**
-   * Test: sendMessage method
-   */
+ 
   testSendMessage() {
     let messageReceived = null;
-
-    // Listen for messages
+ 
     this.messenger.subscribeToMessages((message) => {
       messageReceived = message;
     });
@@ -70,8 +59,7 @@ class MessageSystemTester {
     if (result.sender !== "TestUser") {
       throw new Error("Message sender should match the input");
     }
-
-    // Check if event was emitted
+ 
     if (!messageReceived) {
       throw new Error("Message event should be emitted");
     }
@@ -80,25 +68,19 @@ class MessageSystemTester {
       throw new Error("Emitted message should match returned message");
     }
   }
-
-  /**
-   * Test: subscribeToType method
-   */
+ 
   testSubscribeToType() {
     let alertReceived = null;
     let messageReceived = null;
-
-    // Subscribe to alerts only
+ 
     this.messenger.subscribeToType("alert", (message) => {
       alertReceived = message;
     });
-
-    // Subscribe to all messages
+ 
     this.messenger.subscribeToMessages((message) => {
       messageReceived = message;
     });
 
-    // Send an alert
     this.messenger.sendMessage("alert", "Test alert", "System");
 
     if (!alertReceived) {
@@ -115,10 +97,7 @@ class MessageSystemTester {
       throw new Error("Alert message should have correct type");
     }
   }
-
-  /**
-   * Test: addUser method
-   */
+ 
   testAddUser() {
     let userJoinedReceived = null;
 
@@ -143,29 +122,23 @@ class MessageSystemTester {
     if (!userJoinedReceived.content.includes("Alice")) {
       throw new Error("user-joined message should mention the username");
     }
-
-    // Test duplicate user
+ 
     this.messenger.addUser("Alice");
     if (this.messenger.getUserCount() !== 1) {
       throw new Error("Adding duplicate user should not increase count");
     }
   }
-
-  /**
-   * Test: removeUser method
-   */
+ 
   testRemoveUser() {
     let userLeftReceived = null;
 
     this.messenger.subscribeToType("user-left", (message) => {
       userLeftReceived = message;
     });
-
-    // Add user first
+ 
     this.messenger.addUser("Bob");
     const initialCount = this.messenger.getUserCount();
-
-    // Remove user
+ 
     this.messenger.removeUser("Bob");
 
     if (this.messenger.getUserCount() !== initialCount - 1) {
@@ -184,15 +157,11 @@ class MessageSystemTester {
       throw new Error("user-left message should mention the username");
     }
   }
-
-  /**
-   * Test: getMessageHistory method
-   */
+ 
   testGetMessageHistory() {
-    // Clear existing messages
+   
     this.messenger.clearHistory();
-
-    // Send some messages
+ 
     this.messenger.sendMessage("message", "Message 1");
     this.messenger.sendMessage("message", "Message 2");
     this.messenger.sendMessage("message", "Message 3");
@@ -206,17 +175,13 @@ class MessageSystemTester {
     if (history.length === 0) {
       throw new Error("Message history should contain sent messages");
     }
-
-    // Test with count parameter
+ 
     const limitedHistory = this.messenger.getMessageHistory(2);
     if (limitedHistory.length > 2) {
       throw new Error("getMessageHistory should respect count parameter");
     }
   }
-
-  /**
-   * Test: getStats method
-   */
+ 
   testGetStats() {
     const stats = this.messenger.getStats();
 
@@ -236,43 +201,33 @@ class MessageSystemTester {
       throw new Error("Stats should include messagesByType as object");
     }
   }
-
-  /**
-   * Test: Message persistence (last 100 messages)
-   */
+ 
   testMessagePersistence() {
-    // Clear messages first
+   
     this.messenger.clearHistory();
-
-    // Send 105 messages to test the 100 message limit
+ 
     for (let i = 1; i <= 105; i++) {
       this.messenger.sendMessage("message", `Message ${i}`);
     }
 
-    const history = this.messenger.getMessageHistory(200); // Request more than available
+    const history = this.messenger.getMessageHistory(200);  
 
     if (history.length > 100) {
       throw new Error("Should not store more than 100 messages");
     }
-
-    // Check that older messages were removed
+ 
     const hasFirstMessage = history.some((msg) => msg.content === "Message 1");
     if (hasFirstMessage) {
       throw new Error("Oldest messages should be removed when exceeding 100");
     }
-
-    // Check that recent messages are kept
+ 
     const hasRecentMessage = history.some(
       (msg) => msg.content === "Message 105"
     );
     if (!hasRecentMessage) {
       throw new Error("Recent messages should be kept");
     }
-  }
-
-  /**
-   * Test: Multiple listeners for same event
-   */
+  } 
   testMultipleListeners() {
     let listener1Called = false;
     let listener2Called = false;
@@ -291,10 +246,7 @@ class MessageSystemTester {
       throw new Error("All listeners should be called for the same event");
     }
   }
-
-  /**
-   * Run all tests
-   */
+ 
   async runAllTests() {
     console.log("🚀 Starting MessageSystem Tests...\n");
 
@@ -323,10 +275,7 @@ class MessageSystemTester {
 
     this.printResults();
   }
-
-  /**
-   * Print test results summary
-   */
+ 
   printResults() {
     console.log("\n📊 Test Results:");
     console.log("==================");
@@ -368,10 +317,7 @@ class MessageSystemTester {
     }
   }
 }
-
-/**
- * Main test execution
- */
+ 
 async function runTests() {
   try {
     const tester = new MessageSystemTester();
@@ -383,8 +329,7 @@ async function runTests() {
     );
   }
 }
-
-// Run tests if this file is executed directly
+ 
 if (require.main === module) {
   console.log("🧪 MessageSystem Test Suite");
   console.log("============================\n");

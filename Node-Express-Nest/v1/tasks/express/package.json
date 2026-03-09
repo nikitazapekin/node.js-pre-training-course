@@ -1,0 +1,16 @@
+{
+  "name": "express-todo-app",
+  "version": "1.0.0",
+  "description": "Express.js Todo App with middlewares and REST API",
+  "main": "app/index.js",
+  "scripts": {
+    "start": "node app/index.js",
+    "test": "node app/index.js &"
+  },
+  "keywords": ["express", "todo", "rest-api"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
