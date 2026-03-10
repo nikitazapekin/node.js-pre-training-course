@@ -1,0 +1,174 @@
+-- ============================================================================
+-- Task 07: Connecting Your Todo Project to a Database Using an ORM (Prisma)
+-- ============================================================================
+-- 
+-- Pull Request / Implementation: Local implementation in this repository
+-- Files created/modified:
+--   - prisma/schema.prisma (ORM models and relationships)
+--   - prisma/seed.ts (Seed script with sample data)
+--   - prisma.config.ts (Prisma configuration)
+--   - .env (Database connection string)
+--   - package.json (Prisma scripts and dependencies)
+--
+-- ============================================================================
+-- STEP 1: CHOOSE AND INSTALL AN ORM
+-- ============================================================================
+-- 
+-- Selected ORM: Prisma (https://www.prisma.io/)
+-- Prisma is a modern ORM for Node.js and TypeScript that provides:
+-- - Type-safe database access
+-- - Auto-generated migrations
+-- - Intuitive data modeling
+-- - Built-in query builder
+--
+-- Terminal commands to install Prisma:
+-- 
+-- npm install --save-dev prisma @prisma/client ts-node
+-- npm install dotenv --save-dev
+--
+-- ============================================================================
+-- STEP 2: CONFIGURE THE ORM
+-- ============================================================================
+-- 
+-- 1. Initialize Prisma:
+--    npx prisma init --datasource-provider postgresql
+--
+-- 2. Configure database connection in .env:
+--    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/todo_app?schema=public"
+--
+-- 3. prisma.config.ts configuration:
+--    - Points to schema.prisma
+--    - Configures migrations path
+--    - Sets up datasource URL from environment variable
+--
+-- ============================================================================
+-- STEP 3: DEFINE MODELS AND RUN MIGRATIONS
+-- ============================================================================
+-- 
+-- Prisma Schema (prisma/schema.prisma):
+-- 
+-- generator client {
+--   provider = "prisma-client-js"
+-- }
+--
+-- datasource db {
+--   provider = "postgresql"
+-- }
+--
+-- model User {
+--   id        Int      @id @default(autoincrement())
+--   name      String
+--   email     String   @unique
+--   createdAt DateTime @default(now()) @map("created_at")
+--   todos     Todo[]
+--
+--   @@map("users")
+-- }
+--
+-- model Todo {
+--   id          Int      @id @default(autoincrement())
+--   title       String
+--   description String?
+--   status      String   @default("active")
+--   createdAt   DateTime @default(now()) @map("created_at")
+--   userId      Int      @map("user_id")
+--   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+--
+--   @@map("todos")
+-- }
+--
+-- Run migrations:
+--    npx prisma migrate dev --name init
+--
+-- Generate Prisma Client:
+--    npx prisma generate
+--
+-- ============================================================================
+-- STEP 4: SEED SCRIPT
+-- ============================================================================
+-- 
+-- Seed script location: prisma/seed.ts
+--
+-- Run the seed script:
+--    npx prisma db seed
+--    OR
+--    npm run prisma:seed
+--
+-- The seed script creates:
+-- - 2 users: John Doe (john@example.com) and Jane Smith (jane@example.com)
+-- - 3 todos for each user (6 total)
+--
+-- Sample data created:
+--
+-- Users:
+--   1. John Doe - john@example.com
+--   2. Jane Smith - jane@example.com
+--
+-- Todos for John Doe:
+--   1. "Complete project setup" - active
+--   2. "Learn Prisma ORM" - active
+--   3. "Build REST API" - completed
+--
+-- Todos for Jane Smith:
+--   1. "Write documentation" - active
+--   2. "Code review" - active
+--   3. "Set up CI/CD" - completed
+--
+-- ============================================================================
+-- PACKAGE.JSON SCRIPTS
+-- ============================================================================
+-- 
+-- "prisma:generate": "prisma generate"     - Generate Prisma Client
+-- "prisma:migrate": "prisma migrate dev"   - Run migrations
+-- "prisma:seed": "ts-node prisma/seed.ts"  - Run seed script
+-- "prisma:studio": "prisma studio"         - Open Prisma Studio GUI
+--
+-- ============================================================================
+-- VERIFICATION QUERIES (Using Prisma Client)
+-- ============================================================================
+-- 
+-- import { PrismaClient } from '@prisma/client';
+-- const prisma = new PrismaClient();
+--
+-- // Get all users with their todos
+-- const users = await prisma.user.findMany({
+--   include: { todos: true }
+-- });
+--
+-- // Get all active todos
+-- const activeTodos = await prisma.todo.findMany({
+--   where: { status: 'active' }
+-- });
+--
+-- // Get todos for a specific user
+-- const userTodos = await prisma.todo.findMany({
+--   where: { userId: 1 }
+-- });
+--
+-- ============================================================================
+-- ISSUES ENCOUNTERED AND SOLUTIONS
+-- ============================================================================
+-- 
+-- 1. Prisma 7 Configuration Change:
+--    - Issue: Prisma 7 moved datasource URL from schema.prisma to prisma.config.ts
+--    - Solution: Removed `url` from datasource block in schema.prisma and 
+--      configured it in prisma.config.ts instead
+--
+-- 2. Database Authentication:
+--    - Issue: Invalid database credentials
+--    - Solution: Ensure PostgreSQL is running and credentials in .env match
+--      your PostgreSQL setup (default: postgres/postgres)
+--
+-- 3. TypeScript Support:
+--    - Issue: Seed script requires TypeScript execution
+--    - Solution: Installed ts-node and configured it in package.json
+--
+-- ============================================================================
+-- NOTES
+-- ============================================================================
+-- - Prisma maps model names to database tables using @@map("table_name")
+-- - Field names are camelCase in Prisma, snake_case in database using @map()
+-- - The @relation decorator establishes foreign key relationships
+-- - onDelete: Cascade ensures todos are deleted when their user is deleted
+-- - Prisma Studio (npx prisma studio) provides a GUI to browse and edit data
+-- - Migrations are stored in prisma/migrations/ directory
