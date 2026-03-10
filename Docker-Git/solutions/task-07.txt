@@ -1,0 +1,227 @@
+# Task 07: Orchestrating Multiple Services with Docker Compose - Solution
+
+## Complete docker-compose.yml File
+
+```yaml
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=appdb
+      - DATABASE_USER=appuser
+      - DATABASE_PASSWORD=apppassword
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=appuser
+      - POSTGRES_PASSWORD=apppassword
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+```
+
+## All Docker Compose Commands Used
+
+### Start all services
+```bash
+cd solutions/task-07
+docker-compose up
+```
+
+### Start services in detached mode (background)
+```bash
+docker-compose up -d
+```
+
+### Build and start services
+```bash
+docker-compose up --build
+```
+
+### Check running services
+```bash
+docker-compose ps
+```
+
+### View logs for all services
+```bash
+docker-compose logs
+```
+
+### View logs for specific service
+```bash
+docker-compose logs api
+docker-compose logs postgres
+docker-compose logs pgadmin
+```
+
+### Follow logs in real-time
+```bash
+docker-compose logs -f
+docker-compose logs -f api
+```
+
+### Stop services gracefully
+```bash
+docker-compose down
+```
+
+### Stop services and remove volumes
+```bash
+docker-compose down -v
+```
+
+### Restart a specific service
+```bash
+docker-compose restart api
+```
+
+### Execute command inside a container
+```bash
+docker-compose exec api npm start
+docker-compose exec postgres psql -U appuser -d appdb
+```
+
+## URLs and Credentials for Accessing Services
+
+| Service   | URL                    | Credentials                          |
+|-----------|------------------------|--------------------------------------|
+| API       | http://localhost:3000  | No authentication required           |
+| pgAdmin   | http://localhost:8080  | Email: admin@example.com             |
+|           |                        | Password: admin                      |
+| PostgreSQL| localhost:5432         | User: appuser                        |
+|           |                        | Password: apppassword                |
+|           |                        | Database: appdb                      |
+
+### API Endpoints
+
+- **Health Check:** `http://localhost:3000/health`
+- **Data:** `http://localhost:3000/data`
+
+### Connecting pgAdmin to PostgreSQL
+
+1. Open http://localhost:8080 in browser
+2. Login with admin@example.com / admin
+3. Right-click "Servers" → "Register" → "Server"
+4. Connection settings:
+   - Host name/address: `postgres` (service name in docker-compose)
+   - Port: `5432`
+   - Maintenance database: `appdb`
+   - Username: `appuser`
+   - Password: `apppassword`
+
+## Output of `docker-compose ps` When Services Are Running
+
+```
+NAME                IMAGE               COMMAND                  SERVICE     CREATED          STATUS          PORTS
+task-07-api-1       node:24-alpine      "docker-entrypoint.s…"   api         30 seconds ago   Up 29 seconds   0.0.0.0:3000->3000/tcp
+task-07-pgadmin-1   dpage/pgadmin4      "/entrypoint.sh"         pgadmin     30 seconds ago   Up 29 seconds   0.0.0.0:8080->80/tcp
+task-07-postgres-1  postgres:16         "docker-entrypoint.s…"   postgres    30 seconds ago   Up 29 seconds   0.0.0.0:5432->5432/tcp
+```
+
+## Testing the Multi-Service Setup
+
+### Test API endpoints
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Data endpoint
+curl http://localhost:3000/data
+```
+
+### Expected output from /health
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-03-10T12:00:00.000Z",
+  "uptime": 123.456
+}
+```
+
+### Expected output from /data
+```json
+[
+  {"id": 1, "name": "Item 1", "description": "First item"},
+  {"id": 2, "name": "Item 2", "description": "Second item"},
+  {"id": 3, "name": "Item 3", "description": "Third item"}
+]
+```
+
+## Service Architecture
+
+```
+┌─────────────────┐
+│     pgAdmin     │  Port 8080
+│  (Database UI)  │
+└────────┬────────┘
+         │
+         │ app-network
+         │
+┌────────▼────────┐     ┌─────────────────┐
+│    PostgreSQL   │◄────│   Node.js API   │  Port 3000
+│   (Database)    │     │   (Express)     │
+│   Port 5432     │     │                 │
+│  Volume: data   │     └────────┬────────┘
+└─────────────────┘              │
+                          http://localhost:3000
+```
+
+## Challenges Encountered
+
+### 1. Network Communication Between Services
+**Problem:** Services couldn't connect initially.
+
+**Solution:** Used Docker Compose networks to enable service discovery by service name (`postgres` instead of `localhost`).
+
+### 2. Database Persistence
+**Problem:** Data lost when containers restart.
+
+**Solution:** Added named volume `postgres-data` for PostgreSQL data directory.
+
+### 3. Service Startup Order
+**Problem:** API starts before database is ready.
+
+**Solution:** Used `depends_on` to ensure postgres starts before api (note: this only ensures container start order, not readiness).
+
+### 4. pgAdmin Connection to PostgreSQL
+**Problem:** pgAdmin couldn't connect using `localhost`.
+
+**Solution:** Use the service name `postgres` as the hostname within the Docker network.

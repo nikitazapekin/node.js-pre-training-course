@@ -1,0 +1,515 @@
+# Task 09: Mastering Docker Commands and Image Management - Solution
+
+## Overview
+
+This task covers essential Docker commands for:
+- Image management (pull, tag, save, load, remove)
+- Container lifecycle management (run, start, stop, exec)
+- Monitoring and troubleshooting (stats, logs, inspect)
+- Volume and network management
+- Cleanup and maintenance
+
+## 1. Image Management Commands
+
+### Pull Images
+
+```bash
+# Pull nginx alpine image
+docker pull nginx:alpine
+
+# Pull redis 7 alpine image
+docker pull redis:7-alpine
+
+# Pull node 24 alpine image
+docker pull node:24-alpine
+```
+
+**Purpose:** Download images from Docker Hub registry to local machine.
+
+### List and Inspect Images
+
+```bash
+# List all Docker images
+docker images
+# or
+docker image ls
+
+# Inspect image details (metadata, layers, environment)
+docker inspect nginx:alpine
+
+# Show image history (layers)
+docker history nginx:alpine
+```
+
+**Sample Output of `docker images`:**
+```
+REPOSITORY   TAG         IMAGE ID       CREATED       SIZE
+nginx        alpine      abc123def456   2 weeks ago   45.2MB
+redis        7-alpine    def789ghi012   3 weeks ago   35.8MB
+node         24-alpine   ghi345jkl678   1 week ago    125MB
+```
+
+### Tag Images
+
+```bash
+# Tag nginx image with custom tag
+docker tag nginx:alpine myregistry/nginx:custom
+docker tag nginx:alpine myusername/nginx:v1.0
+```
+
+**Purpose:** Create additional references to an image (useful for pushing to registries).
+
+### Save and Load Images
+
+```bash
+# Save nginx image to tar file
+docker save nginx:alpine -o nginx-alpine.tar
+
+# Load image from tar file
+docker load -i nginx-alpine.tar
+
+# Verify loaded image
+docker images | grep nginx
+```
+
+**Purpose:** 
+- `save` - Export image for offline transfer or backup
+- `load` - Import image from tar file
+
+### Remove Images and Cleanup
+
+```bash
+# Remove specific image by name
+docker rmi nginx:alpine
+# or
+docker image rm nginx:alpine
+
+# Remove image by ID
+docker rmi abc123def456
+
+# Force remove (even if used by containers)
+docker rmi -f nginx:alpine
+
+# Remove all dangling images (untagged)
+docker image prune
+
+# Remove all unused images
+docker image prune -a
+```
+
+## 2. Container Lifecycle Management
+
+### Run Containers
+
+```bash
+# Run nginx in detached mode with port mapping
+docker run -d -p 8080:80 --name my-nginx nginx:alpine
+
+# Run redis with custom name and restart policy
+docker run -d --name my-redis --restart unless-stopped redis:7-alpine
+
+# Run node container without starting (create only)
+docker create --name my-node node:24-alpine sleep 3600
+
+# Start the created container
+docker start my-node
+
+# Run container with interactive terminal
+docker run -it --name node-interactive node:24-alpine sh
+
+# Run container with environment variables
+docker run -d -e REDIS_PASSWORD=secret --name redis-auth redis:7-alpine
+
+# Run container with volume mount
+docker run -d -v /host/data:/container/data --name data-container nginx:alpine
+```
+
+**Purpose:**
+- `-d` - Detached mode (background)
+- `-p` - Port mapping (host:container)
+- `--name` - Custom container name
+- `--restart` - Restart policy (no, on-failure, always, unless-stopped)
+- `-it` - Interactive terminal
+- `-v` - Volume mount
+
+### Execute Commands in Containers
+
+```bash
+# Execute bash inside nginx container
+docker exec -it my-nginx bash
+# For alpine images (no bash), use sh:
+docker exec -it my-nginx sh
+
+# Execute redis-cli inside redis container
+docker exec -it my-redis redis-cli
+
+# Run simple command without interactive mode
+docker exec my-redis redis-cli ping
+# Output: PONG
+
+# Execute command as specific user
+docker exec -u root my-node whoami
+
+# Set environment variable for exec command
+docker exec -e MY_VAR=value my-node env
+```
+
+### Copy Files Between Host and Containers
+
+```bash
+# Copy file from host to container
+docker cp /path/on/host/file.txt my-node:/path/in/container/
+
+# Copy directory from host to container
+docker cp /path/on/host/dir/ my-node:/path/in/container/
+
+# Copy file from container to host
+docker cp my-node:/path/in/container/file.txt /path/on/host/
+
+# Copy entire directory from container to host
+docker cp my-node:/app/data/ /path/on/host/backup/
+```
+
+### Container Lifecycle Commands
+
+```bash
+# List running containers
+docker ps
+
+# List all containers (including stopped)
+docker ps -a
+
+# Stop a running container
+docker stop my-nginx
+
+# Start a stopped container
+docker start my-nginx
+
+# Restart a container
+docker restart my-redis
+
+# Pause a container (suspend processes)
+docker pause my-node
+
+# Unpause a container
+docker unpause my-node
+
+# Kill a container (force stop)
+docker kill my-nginx
+
+# Remove a stopped container
+docker rm my-node
+
+# Force remove running container
+docker rm -f my-nginx
+
+# Remove all stopped containers
+docker container prune
+```
+
+## 3. Monitoring and Troubleshooting
+
+### Monitor Resource Usage
+
+```bash
+# View real-time resource usage stats
+docker stats
+
+# View stats for specific container
+docker stats my-nginx
+
+# View stats once (no stream)
+docker stats --no-stream
+
+# View stats with specific format
+docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+```
+
+**Sample Output:**
+```
+CONTAINER ID   NAME       CPU %     MEM USAGE / LIMIT   MEM %     NET I/O           BLOCK I/O   PIDS
+abc123         my-nginx   0.02%     5.25MB / 7.77GB     0.07%     1.2kB / 648B      0B / 0B     2
+def456         my-redis   0.05%     8.1MB / 7.77GB      0.10%     500B / 0B         0B / 0B     1
+```
+
+### View Container Logs
+
+```bash
+# View logs for a container
+docker logs my-nginx
+
+# Follow logs in real-time (like tail -f)
+docker logs -f my-nginx
+
+# Show timestamps in logs
+docker logs -t my-nginx
+
+# Show last N lines
+docker logs --tail 100 my-nginx
+
+# Follow with timestamps and tail
+docker logs -f -t --tail 50 my-nginx
+
+# Show logs since specific time
+docker logs --since 2024-01-01T00:00:00 my-nginx
+
+# Show logs from last 10 minutes
+docker logs --since 10m my-nginx
+```
+
+### Inspect Container Configuration
+
+```bash
+# Full container inspection (JSON output)
+docker inspect my-nginx
+
+# Get specific field using --format
+docker inspect --format='{{.State.Status}}' my-nginx
+docker inspect --format='{{.NetworkSettings.IPAddress}}' my-nginx
+docker inspect --format='{{range .Mounts}}{{.Source}}:{{.Destination}}{{end}}' my-nginx
+
+# Get port mappings
+docker inspect --format='{{range $p, $conf := .NetworkSettings.Ports}}{{$p}} -> {{(index $conf 0).HostPort}}{{end}}' my-nginx
+
+# Get environment variables
+docker inspect --format='{{range .Config.Env}}{{println .}}{{end}}' my-node
+```
+
+### Volume Management
+
+```bash
+# List all volumes
+docker volume ls
+
+# Create a named volume
+docker volume create my-data-volume
+
+# Inspect volume details
+docker volume inspect my-data-volume
+
+# Use volume in container
+docker run -d -v my-data-volume:/data --name volume-test nginx:alpine
+
+# Remove a volume
+docker volume rm my-data-volume
+
+# Remove all unused volumes
+docker volume prune
+
+# Backup volume content
+docker run --rm -v my-data-volume:/data -v $(pwd):/backup alpine tar czf /backup/volume-backup.tar.gz -C /data .
+
+# Restore volume from backup
+docker run --rm -v my-data-volume:/data -v $(pwd):/backup alpine tar xzf /backup/volume-backup.gz -C /data
+```
+
+### Network Troubleshooting
+
+```bash
+# List all networks
+docker network ls
+
+# Inspect network
+docker network inspect bridge
+
+# Create custom network
+docker network create my-network
+
+# Run containers on same network (for communication)
+docker run -d --name web --network my-network nginx:alpine
+docker run -d --name api --network my-network node:24-alpine
+
+# Test connectivity between containers
+docker exec web ping api
+
+# Connect running container to network
+docker network connect my-network my-node
+
+# Disconnect container from network
+docker network disconnect my-network my-node
+
+# Remove network
+docker network rm my-network
+```
+
+## 4. Cleanup and Maintenance
+
+### Stop All Running Containers
+
+```bash
+# Stop all running containers
+docker stop $(docker ps -q)
+
+# Or using xargs
+docker ps -q | xargs docker stop
+```
+
+### Remove Containers, Images, Volumes, Networks
+
+```bash
+# Remove all stopped containers
+docker rm $(docker ps -a -q)
+
+# Remove all images
+docker rmi $(docker images -q)
+
+# Remove all volumes
+docker volume prune -f
+
+# Remove all networks (custom)
+docker network prune -f
+
+# Complete cleanup (one command)
+docker system prune -a --volumes
+```
+
+### System Prune Commands
+
+```bash
+# Remove stopped containers, dangling images, unused networks
+docker system prune
+
+# Remove all unused images (not just dangling)
+docker system prune -a
+
+# Remove volumes as well
+docker system prune --volumes
+
+# Prune with confirmation bypass
+docker system prune -f
+
+# Show disk usage before/after
+docker system df
+```
+
+### Docker System Disk Usage
+
+```bash
+# View Docker disk usage
+docker system df
+
+# Verbose disk usage
+docker system df -v
+```
+
+**Sample Output of `docker system df` (Before Cleanup):**
+```
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          15        3         1.2GB     800MB (66%)
+Containers      8         2         150MB     100MB (66%)
+Local Volumes   5         1         500MB     400MB (80%)
+Build Cache     20        0         300MB     300MB
+```
+
+**Sample Output of `docker system df` (After Cleanup):**
+```
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          3         3         200MB     0B (0%)
+Containers      2         2         50MB      0B (0%)
+Local Volumes   1         1         100MB     0B (0%)
+Build Cache     0         0         0B        0B
+```
+
+## 5. Most Useful Docker Commands Reference
+
+| Category | Command | Description |
+|----------|---------|-------------|
+| **Images** | `docker pull <image>` | Download image from registry |
+| | `docker images` | List all local images |
+| | `docker rmi <image>` | Remove image |
+| | `docker save/load` | Export/import images |
+| **Containers** | `docker run -d -p <port> <image>` | Run container in background |
+| | `docker ps -a` | List all containers |
+| | `docker exec -it <container> <cmd>` | Run command in container |
+| | `docker logs -f <container>` | Follow container logs |
+| | `docker stop/start/rm` | Container lifecycle |
+| **Monitoring** | `docker stats` | Real-time resource usage |
+| | `docker inspect <container>` | Detailed container info |
+| **Volumes** | `docker volume create/ls/rm` | Volume management |
+| | `docker cp` | Copy files to/from container |
+| **Cleanup** | `docker system prune` | Clean up unused resources |
+| | `docker system df` | Show disk usage |
+| **Network** | `docker network create/ls` | Network management |
+
+## Complete Workflow Example
+
+```bash
+# 1. Pull required images
+docker pull nginx:alpine
+docker pull redis:7-alpine
+docker pull node:24-alpine
+
+# 2. Create network for containers
+docker network create app-network
+
+# 3. Run containers
+docker run -d -p 8080:80 --name web --network app-network --restart unless-stopped nginx:alpine
+docker run -d --name cache --network app-network --restart unless-stopped redis:7-alpine
+docker create --name app --network app-network node:24-alpine sleep 3600
+docker start app
+
+# 4. Verify containers are running
+docker ps
+
+# 5. Check resource usage
+docker stats --no-stream
+
+# 6. View logs
+docker logs -t --tail 20 web
+
+# 7. Execute commands
+docker exec cache redis-cli ping
+docker exec -it web sh
+
+# 8. Copy files
+docker cp ./index.html web:/usr/share/nginx/html/
+
+# 9. Inspect configuration
+docker inspect --format='{{.State.Status}}' web
+
+# 10. Cleanup
+docker stop web cache app
+docker rm web cache app
+docker network rm app-network
+docker system prune -f
+```
+
+## Challenges Encountered
+
+### 1. Alpine Images Without Bash
+**Problem:** Alpine-based images use `sh` instead of `bash`.
+
+**Solution:** Use `docker exec -it <container> sh` instead of `bash`.
+
+### 2. Container Immediately Exits
+**Problem:** Container stops right after starting.
+
+**Solution:** 
+- Use `sleep` command for testing: `docker run node:alpine sleep 3600`
+- Or use interactive mode: `docker run -it node:alpine sh`
+
+### 3. Port Already in Use
+**Problem:** Cannot bind to port (already used).
+
+**Solution:** Use different host port: `docker run -p 8081:80 nginx`
+
+### 4. Permission Issues with Volumes
+**Problem:** Container cannot read/write to mounted volume.
+
+**Solution:** Check host directory permissions or use named volumes.
+
+## Summary
+
+This task covered essential Docker commands for daily development workflow:
+- Image management (pull, tag, save, load, remove)
+- Container lifecycle (run, start, stop, exec, rm)
+- Monitoring (stats, logs, inspect)
+- Volume and network management
+- Cleanup operations (prune, system df)
+
+The most frequently used commands in practice are:
+1. `docker ps` - Check running containers
+2. `docker logs -f` - Follow application logs
+3. `docker exec -it` - Access running containers
+4. `docker-compose up/down` - Manage multi-container apps
+5. `docker system prune` - Clean up disk space

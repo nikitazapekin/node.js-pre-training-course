@@ -1,0 +1,238 @@
+# Task 06: Git Rebase and Clean History Management - Solution
+
+## Commands Used for Interactive Rebase
+
+### 1. Create Feature Branch with Multiple Commits
+
+```bash
+# Create and switch to feature branch
+git checkout -b feature/user-authentication
+
+# Commit 1: Add auth.js
+echo "// Authentication module" > auth.js
+git add auth.js
+git commit -m "Add authentication module"
+
+# Commit 2: Update package.json
+echo '{"dependencies": {"bcrypt": "^5.0.0"}}' >> package.json
+git add package.json
+git commit -m "Add bcrypt dependency to package.json"
+
+# Commit 3: Add middleware (with typo, then fix)
+echo "// User middleware" > middleware.js
+git add middleware.js
+git commit -m "Add user middleware"
+
+# Commit 4: Fix typo in middleware
+# (Simulating a typo fix commit)
+echo "// User middleware - corrected" > middleware.js
+git add middleware.js
+git commit -m "fix typo in middleware"
+
+# Commit 5: Add tests
+echo "// Auth tests" > test.js
+git add test.js
+git commit -m "Add authentication tests"
+```
+
+### 2. Interactive Rebase to Squash Commits
+
+```bash
+# Start interactive rebase for last 5 commits
+git rebase -i HEAD~5
+
+# In the editor, change:
+# pick <hash> Add authentication module
+# pick <hash> Add bcrypt dependency to package.json
+# pick <hash> Add user middleware
+# fixup <hash> fix typo in middleware    <- changed 'pick' to 'fixup'
+# pick <hash> Add authentication tests
+
+# To edit commit messages, change 'pick' to 'reword'
+```
+
+### 3. Rebase Feature Branch onto Main
+
+```bash
+# Switch to main and add a new commit
+git checkout main
+echo "# Project Updates" >> README.md
+git add README.md
+git commit -m "Update README with project info"
+
+# Rebase feature branch onto updated main
+git checkout feature/user-authentication
+git rebase main
+
+# Alternative: Create test branch to compare with merge
+git checkout main
+git checkout -b test-merge-approach
+git merge feature/user-authentication
+```
+
+## Before/After Commit History
+
+### Before Interactive Rebase
+
+```bash
+$ git log --oneline feature/user-authentication
+
+a1b2c3d (HEAD -> feature/user-authentication) Add authentication tests
+e4f5g6h fix typo in middleware
+i7j8k9l Add user middleware
+m0n1o2p Add bcrypt dependency to package.json
+q3r4s5t Add authentication module
+```
+
+### After Interactive Rebase (Squashed)
+
+```bash
+$ git log --oneline feature/user-authentication
+
+d6e7f8g (HEAD -> feature/user-authentication) Add authentication tests
+h9i0j1k Add user middleware with corrections
+l2m3n4o Add bcrypt dependency to package.json
+o5p6q7r Add authentication module
+```
+
+### After Rebasing onto Main
+
+```bash
+$ git log --oneline --graph
+
+* d6e7f8g (HEAD -> feature/user-authentication) Add authentication tests
+* h9i0j1k Add user middleware with corrections
+* l2m3n4o Add bcrypt dependency to package.json
+* o5p6q7r Add authentication module
+* z8y9x0w (main) Update README with project info
+* q3r4s5t Initial commit
+```
+
+## When to Use Rebase vs Merge
+
+### Use Rebase When:
+
+1. **Cleaning up local commits** before sharing with team
+   - Squash WIP commits into logical units
+   - Fix typos or small mistakes without extra commits
+
+2. **Keeping linear history** on feature branches
+   - Makes `git log` easier to read
+   - Clear chronological order of changes
+
+3. **Updating feature branch with main**
+   - Avoids unnecessary merge commits
+   - Tests run against latest code
+
+4. **Before code review**
+   - Presents clean, organized commit history
+   - Each commit represents a meaningful change
+
+### Use Merge When:
+
+1. **Preserving complete history** is important
+   - Shows when branches diverged and reunited
+   - Maintains context of parallel development
+
+2. **Integrating long-lived branches**
+   - Feature branches developed over weeks/months
+   - Release branches
+
+3. **Team collaboration on same branch**
+   - Multiple developers working on feature branch
+   - Rebase would rewrite shared history
+
+4. **When history itself is valuable**
+   - Shows experimental approaches that were tried
+   - Documents the development journey
+
+### Golden Rule of Rebase:
+
+> **NEVER rebase commits that have been pushed to a shared repository**
+> 
+> Only rebase your local, unshared commits to avoid disrupting teammates' work.
+
+## Challenges Encountered
+
+### 1. Conflict Resolution During Rebase
+
+**Problem:** When rebasing onto main, conflicts occurred in files modified by both branches.
+
+**Solution:**
+```bash
+# Git pauses rebase at conflicting commit
+# Edit files to resolve conflicts
+git add <resolved-files>
+git rebase --continue
+
+# Or abort if needed
+git rebase --abort
+```
+
+### 2. Interactive Editor Configuration
+
+**Problem:** Default editor wasn't user-friendly for rebase operations.
+
+**Solution:**
+```bash
+# Set preferred editor
+git config --global core.editor "code --wait"
+
+# Or use vim with proper syntax highlighting
+git config --global core.editor "vim"
+```
+
+### 3. Losing Track of Original Commits
+
+**Problem:** After squashing, original commit hashes are lost.
+
+**Solution:**
+```bash
+# Check REFLOG before rebasing
+git reflog
+
+# Create backup branch before rebase
+git branch feature-backup
+git rebase -i HEAD~5
+```
+
+### 4. Understanding Rebase Order
+
+**Problem:** Confusion about commit order during rebase.
+
+**Key Learning:**
+- Commits are listed oldest to newest in rebase editor
+- But they are applied from top to bottom
+- Changing order affects how conflicts are resolved
+
+### 5. Detached HEAD State
+
+**Problem:** Accidentally entered detached HEAD during rebase operations.
+
+**Solution:**
+```bash
+# Check current state
+git status
+
+# Return to branch
+git checkout <branch-name>
+
+# Or use git switch (newer Git versions)
+git switch -
+```
+
+## Summary
+
+Interactive rebase is a powerful tool for maintaining clean Git history. The key commands are:
+
+| Command | Description |
+|---------|-------------|
+| `git rebase -i HEAD~N` | Start interactive rebase for last N commits |
+| `pick` | Use commit as-is |
+| `reword` | Use commit, edit message |
+| `squash` | Combine with previous commit, keep both messages |
+| `fixup` | Combine with previous, discard message |
+| `edit` | Stop for amending |
+| `drop` | Remove commit entirely |
+| `git rebase --continue` | Continue after resolving conflicts |
+| `git rebase --abort` | Cancel rebase operation |
