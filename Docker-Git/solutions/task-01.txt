@@ -1,0 +1,67 @@
+# Task 01: Initialize Repository and Basic Git Operations
+
+## Git Commands Used
+
+### 1. Initialize Repository
+```bash
+mkdir my-first-repo
+cd my-first-repo
+git init
+```
+**Explanation:** Creates a new directory and initializes it as a Git repository. The `git init` command creates a `.git` subdirectory that contains all the necessary repository files.
+
+### 2. Configure User Name and Email
+```bash
+git config user.name "Student"
+git config user.email "student@example.com"
+```
+**Explanation:** Sets the author name and email for commits in this repository. These settings are stored locally (repository-specific) rather than globally.
+
+### 3. Create Files
+Created the following files manually:
+- `README.md` - Project description
+- `.gitignore` - Ignores `node_modules/`, `.env`, and `*.log`
+- `package.json` - Project metadata
+
+### 4. First Commit (.gitignore)
+```bash
+git add .gitignore
+git commit -m "Add .gitignore file"
+```
+**Explanation:** 
+- `git add .gitignore` stages the .gitignore file for commit
+- `git commit -m "..."` creates a new commit with the staged changes and a message
+
+### 5. Second Commit (README.md and package.json)
+```bash
+git add README.md package.json
+git commit -m "Add README.md and package.json"
+```
+**Explanation:** Stages multiple files together and commits them as a single atomic change.
+
+### 6. View Commit History
+```bash
+git log --oneline
+```
+**Explanation:** Displays a condensed view of commit history with one line per commit.
+
+## Commit History Output
+
+```
+9b7dfda (HEAD -> master) Add README.md and package.json
+1a0cca7 Add .gitignore file
+```
+
+## Summary
+
+This task demonstrated the fundamental Git workflow:
+1. **Initialize** a repository with `git init`
+2. **Configure** user identity with `git config`
+3. **Stage** changes with `git add`
+4. **Commit** changes with `git commit`
+5. **View history** with `git log`
+
+The key concept learned is that Git tracks changes in three states:
+- **Working directory** - where you create/modify files
+- **Staging area** - where you prepare changes for commit
+- **Repository** - where committed changes are stored
