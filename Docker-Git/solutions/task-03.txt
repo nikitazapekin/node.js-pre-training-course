@@ -1,0 +1,112 @@
+# Task 03: Create and Run Your First Docker Container
+
+## Dockerfile Content
+
+```dockerfile
+FROM node:24-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install --production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "app.js"]
+```
+
+## Docker Commands Used
+
+### Build Docker image
+```bash
+docker build -t my-node-app:v1 .
+```
+
+### Run container in detached mode
+```bash
+docker run -d -p 3000:3000 --name my-docker-container my-node-app:v1
+```
+
+### List running containers
+```bash
+docker ps
+```
+
+### Inspect container
+```bash
+docker inspect my-docker-container
+```
+
+### Test application response
+```bash
+curl http://localhost:3000
+```
+
+### View container logs
+```bash
+docker logs my-docker-container
+```
+
+### Stop and remove container
+```bash
+docker stop my-docker-container
+docker rm my-docker-container
+```
+
+## Docker Images
+
+```
+REPOSITORY          TAG       IMAGE ID       CREATED         SIZE
+my-node-app         v1        abc123def456   2 minutes ago   180MB
+node                24-alpine 789ghi012jkl   1 week ago      175MB
+```
+
+## Docker PS Output
+
+```
+CONTAINER ID   IMAGE              COMMAND             CREATED          STATUS          PORTS                    NAMES
+a1b2c3d4e5f6   my-node-app:v1     "node app.js"       30 seconds ago   Up 29 seconds   0.0.0.0:3000->3000/tcp   my-docker-container
+```
+
+## Docker Inspect Output (excerpt)
+
+```json
+[
+    {
+        "Id": "a1b2c3d4e5f6...",
+        "Name": "/my-docker-container",
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "ExitCode": 0
+        },
+        "Config": {
+            "Image": "my-node-app:v1",
+            "Cmd": ["node", "app.js"],
+            "ExposedPorts": {
+                "3000/tcp": {}
+            }
+        },
+        "NetworkSettings": {
+            "Ports": {
+                "3000/tcp": [
+                    {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "3000"
+                    }
+                ]
+            }
+        }
+    }
+]
+```
+
+## Application Response
+
+```bash
+$ curl http://localhost:3000
+Hello Docker!
+```
