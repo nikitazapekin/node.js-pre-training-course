@@ -1,0 +1,13 @@
+{
+  "name": "task-10",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["redis", "caching", "todo"],
+  "author": "",
+  "license": "ISC",
+  "description": "Redis caching demonstration for user todo list"
+}
