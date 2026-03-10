@@ -1,0 +1,208 @@
+# Task 05: Optimizing Docker Images with Multi-stage Builds
+
+## Single-stage Dockerfile (app1/)
+
+```dockerfile
+# Single-stage Dockerfile
+# Uses full Node.js 24 image, includes all dependencies and source files
+
+FROM node:24
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies for TypeScript)
+RUN npm install
+
+# Copy all source files
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["npm", "start"]
+```
+
+## Multi-stage Dockerfile (app2/)
+
+```dockerfile
+# Multi-stage Dockerfile
+# Stage 1: Build stage with full Node.js 24
+# Stage 2: Production stage with lightweight Alpine image
+
+# ===========================================
+# Stage 1: Builder
+# ===========================================
+FROM node:24 AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies for TypeScript)
+RUN npm ci
+
+# Copy all source files
+COPY . .
+
+# Build TypeScript to JavaScript
+RUN npm run build
+
+# ===========================================
+# Stage 2: Production
+# ===========================================
+FROM node:24-alpine AS production
+
+WORKDIR /app
+
+# Copy package files for production dependencies only
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built JavaScript files from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["node", "dist/index.js"]
+```
+
+**Важно:** Для работы `npm ci` необходим `package-lock.json`. Создайте его перед сборкой:
+```bash
+npm install  # создаст package-lock.json
+```
+
+## .dockerignore Content (app2/.dockerignore)
+
+```
+# Dependencies
+node_modules
+npm-debug.log
+package-lock.json
+
+# Source files (not needed in production - we copy compiled JS)
+src
+*.ts
+*.tsx
+
+# TypeScript config
+tsconfig.json
+tsconfig.*.json
+
+# Build output (will be generated in builder stage)
+dist
+
+# Development files
+.env
+.env.*
+*.env
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Test files
+*.test.ts
+*.spec.ts
+__tests__
+coverage
+jest.config.js
+
+# Documentation
+README.md
+*.md
+docs
+
+# Docker files (not needed inside container)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Misc
+.DS_Store
+Thumbs.db
+```
+
+## Commands to Build and Test
+
+### Build Single-stage Image (app1)
+```bash
+cd app1
+docker build -t app1-single-stage .
+```
+
+### Build Multi-stage Image (app2)
+```bash
+cd app2
+docker build -t app2-multi-stage .
+```
+
+### Compare Image Sizes
+```bash
+docker images | grep -E "app1-single-stage|app2-multi-stage|REPOSITORY"
+```
+
+### Run Containers
+```bash
+# Run single-stage app
+docker run -p 3001:3000 app1-single-stage
+
+# Run multi-stage app
+docker run -p 3002:3000 app2-multi-stage
+```
+
+### Test Endpoints
+```bash
+curl http://localhost:3001
+curl http://localhost:3002
+```
+
+## Image Size Comparison
+
+| Image              | Base Image | Size (approx.) | Notes                          |
+|--------------------|------------|----------------|--------------------------------|
+| app1-single-stage  | node:24    | ~1.2 GB        | Includes devDependencies, src  |
+| app2-multi-stage   | node:24-alpine | ~200 MB    | Production only, compiled JS   |
+
+**Expected size reduction: ~80-85% smaller with multi-stage build**
+
+## Key Differences
+
+### Single-stage (app1)
+- Uses full `node:24` image (~1GB+)
+- Contains all devDependencies (TypeScript, ts-node, @types/*)
+- Includes source TypeScript files
+- Larger attack surface, slower pull/deploy times
+
+### Multi-stage (app2)
+- Uses lightweight `node:24-alpine` for production (~50MB base)
+- Only production dependencies (express)
+- Only compiled JavaScript files
+- Smaller attack surface, faster deployments
+- Better for CI/CD pipelines
+
+## Benefits of Multi-stage Builds
+
+1. **Smaller Image Size**: Alpine-based production image is significantly smaller
+2. **Better Security**: Fewer packages = smaller attack surface
+3. **Faster Deployments**: Smaller images pull faster
+4. **Cleaner Images**: No build tools or source code in production
+5. **Cost Savings**: Reduced storage and bandwidth costs

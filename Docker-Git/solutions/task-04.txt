@@ -1,0 +1,106 @@
+# Task 04: Simulating and Resolving Merge Conflicts
+
+## Git Commands Used
+
+### 1. Create conflicting branches:
+
+```bash
+# Start from main branch
+git checkout main
+
+# Create first feature branch
+git checkout -b feature/update-readme-v1
+
+# Modify README.md - change title to "My Awesome Project v1"
+# Edit the file and change the first line
+
+# Commit the change
+git add README.md
+git commit -m "feat(readme): Update title to v1"
+
+# Switch back to main
+git checkout main
+```
+
+### 2. Create another conflicting branch:
+
+```bash
+# Create second feature branch from main
+git checkout -b feature/update-readme-v2
+
+# Modify README.md - change title to "My Super Project v2"
+# Edit the same line as before
+
+# Commit the change
+git add README.md
+git commit -m "feat(readme): Update title to v2"
+```
+
+### 3. Create and resolve conflict:
+
+```bash
+# Switch to main and merge first branch
+git checkout main
+git merge feature/update-readme-v1
+
+# Try to merge second branch (creates conflict)
+git merge feature/update-readme-v2
+```
+
+## Conflict Markers
+
+When merging `feature/update-readme-v2` into `main`, the following conflict markers appeared in README.md:
+
+```
+<<<<<<< HEAD
+# My Awesome Project v1
+=======
+# My Super Project v2
+>>>>>>> feature/update-readme-v2
+```
+
+## How the Conflict Was Resolved
+
+The conflict was resolved by combining both titles creatively:
+
+```markdown
+# My Awesome Super Project v1/v2
+```
+
+This approach:
+- Keeps both version identifiers (v1 and v2)
+- Combines "Awesome" and "Super" to acknowledge both changes
+- Creates a meaningful title that represents both feature branches
+
+After resolving the conflict, the file was staged and committed:
+
+```bash
+# After editing README.md to resolve the conflict
+git add README.md
+git commit -m "Merge feature/update-readme-v2: Resolve conflict by combining both title versions"
+```
+
+## Final Commit Message for the Merge
+
+```
+Merge feature/update-readme-v2: Resolve conflict by combining both title versions
+
+- Combined "My Awesome Project v1" and "My Super Project v2"
+- Final title: "My Awesome Super Project v1/v2"
+- Both feature branch contributions are preserved
+```
+
+## Verification
+
+After the merge, verify the final state:
+
+```bash
+# Check the commit history
+git log --oneline -5
+
+# Verify the README.md content
+cat README.md
+
+# Check all branches
+git branch -a
+```
