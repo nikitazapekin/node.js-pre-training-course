@@ -1,0 +1,159 @@
+# Task 02: Creating Branches and Basic Merge Operations
+
+## Git Commands Used
+
+### 1. Create and Switch to a New Branch
+```bash
+git checkout -b feature/add-scripts
+```
+**Explanation:** Creates a new branch called `feature/add-scripts` and switches to it in one command. The `-b` flag tells Git to create the branch before checking it out.
+
+Alternative (two commands):
+```bash
+git branch feature/add-scripts    # Creates the branch
+git checkout feature/add-scripts  # Switches to the branch
+```
+
+### 2. Make Changes to package.json
+Added scripts section to `package.json`:
+```json
+"scripts": {
+  "start": "node index.js",
+  "test": "jest",
+  "dev": "nodemon index.js"
+}
+```
+
+### 3. Stage and Commit Changes
+```bash
+git add package.json
+git commit -m "Add scripts to package.json"
+```
+**Explanation:** 
+- `git add` stages the modified file
+- `git commit` saves the changes with a descriptive message
+
+### 4. Switch Back to Main Branch
+```bash
+git checkout main
+```
+**Explanation:** Switches back to the `main` branch. The changes made in `feature/add-scripts` are not visible here because they haven't been merged yet.
+
+### 5. View Branch List
+```bash
+git branch -a
+```
+**Explanation:** Lists all local and remote branches. The current branch is marked with an asterisk (*).
+
+Example output:
+```
+  feature/add-scripts
+  feature/add-dependencies
+* main
+```
+
+### 6. Create Another Feature Branch
+```bash
+git checkout -b feature/add-dependencies
+```
+**Explanation:** Creates and switches to a new branch from `main` for adding dependencies.
+
+### 7. Merge Feature Branch into Main
+```bash
+git checkout main
+git merge feature/add-scripts
+```
+**Explanation:** 
+- First switches to `main` branch
+- `git merge` integrates changes from `feature/add-scripts` into `main`
+
+### 8. Delete Merged Branch
+```bash
+git branch -d feature/add-scripts
+```
+**Explanation:** Deletes the `feature/add-scripts` branch after it has been successfully merged. The `-d` flag only allows deletion if the branch is fully merged.
+
+### 9. View Commit History with Graph
+```bash
+git log --graph --oneline
+```
+**Explanation:** Displays commit history as a graph with one line per commit, showing branch structure visually.
+
+Example output:
+```
+* 3f8a2b1 (HEAD -> main) Merge branch 'feature/add-scripts'
+|\  
+| * 7c9d4e2 (feature/add-scripts) Add scripts to package.json
+|/  
+* 9b7dfda Add README.md and package.json
+* 1a0cca7 Add .gitignore file
+```
+
+### 10. Push Changes to Remote (if remote is configured)
+```bash
+git push origin main
+```
+**Explanation:** Pushes the local `main` branch to the remote repository named `origin`.
+
+Push a feature branch:
+```bash
+git push -u origin feature/add-dependencies
+```
+**Explanation:** The `-u` flag sets up tracking between local and remote branches.
+
+## Branch List Output (git branch -a)
+
+### After creating feature/add-scripts:
+```
+  feature/add-scripts
+* main
+```
+
+### After creating feature/add-dependencies:
+```
+  feature/add-dependencies
+  feature/add-scripts
+* main
+```
+
+### After merging and deleting feature/add-scripts:
+```
+  feature/add-dependencies
+* main
+```
+
+## Commit History Output (git log --graph --oneline)
+
+```
+* 3f8a2b1 (HEAD -> main) Merge branch 'feature/add-scripts'
+|\  
+| * 7c9d4e2 (feature/add-scripts) Add scripts to package.json
+|/  
+* 9b7dfda Add README.md and package.json
+* 1a0cca7 Add .gitignore file
+```
+
+## Summary of Git Commands
+
+| Command | Description |
+|---------|-------------|
+| `git branch <name>` | Creates a new branch |
+| `git checkout <branch>` | Switches to specified branch |
+| `git checkout -b <name>` | Creates and switches to new branch |
+| `git add <file>` | Stages file for commit |
+| `git commit -m "msg"` | Commits staged changes with message |
+| `git merge <branch>` | Merges specified branch into current |
+| `git branch -d <name>` | Deletes a merged branch |
+| `git branch -a` | Lists all branches (local + remote) |
+| `git log --graph --oneline` | Shows commit history as graph |
+| `git push origin <branch>` | Pushes branch to remote repository |
+
+## Key Concepts Learned
+
+1. **Branching** - Creating isolated lines of development for features
+2. **Checkout** - Switching between branches to work on different features
+3. **Merging** - Combining work from different branches
+4. **Branch deletion** - Cleaning up after successful merges
+5. **Visual history** - Using `git log --graph` to see branch structure
+
+This workflow is fundamental for collaborative development where team members work on separate features without interfering with each other's work.

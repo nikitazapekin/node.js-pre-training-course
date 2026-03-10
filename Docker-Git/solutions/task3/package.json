@@ -1,0 +1,12 @@
+{
+  "name": "my-docker-app",
+  "version": "1.0.0",
+  "description": "Hello Docker application",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

@@ -1,1 +1,2 @@
-My Super Project v2
+My Awesome Project v1
+ 
