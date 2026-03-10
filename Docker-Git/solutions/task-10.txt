@@ -1,0 +1,639 @@
+# Task 10: Advanced Docker Networking and Data Persistence - Solution
+
+## Overview
+
+This task covers:
+- Custom network creation and management
+- Multi-container communication
+- Volume types and data persistence
+- Network isolation testing
+
+## 1. Custom Network Creation and Management
+
+### Create Custom Bridge Network
+
+```bash
+# Create simple custom bridge network
+docker network create app-network
+
+# Create network with specific subnet configuration
+docker network create \
+  --driver bridge \
+  --subnet 172.20.0.0/16 \
+  --gateway 172.20.0.1 \
+  --ip-range 172.20.0.0/24 \
+  custom-network
+```
+
+**Purpose:**
+- `--driver bridge` - Creates isolated network for containers
+- `--subnet` - Defines IP range for network
+- `--gateway` - Sets gateway IP for network
+- `--ip-range` - Allocates IP pool for containers
+
+### List and Inspect Networks
+
+```bash
+# List all networks
+docker network ls
+
+# Inspect network configuration
+docker network inspect app-network
+docker network inspect custom-network
+
+# Get specific network info
+docker network inspect --format='{{.IPAM.Config}}' app-network
+docker network inspect --format='{{range .Containers}}{{.Name}}{{end}}' app-network
+```
+
+**Sample Output of `docker network ls`:**
+```
+NETWORK ID     NAME              DRIVER    SCOPE
+abc123456789   bridge            bridge    local
+def456789012   host              host      local
+ghi789012345   none              null      local
+jkl012345678   app-network       bridge    local
+mno345678901   custom-network    bridge    local
+```
+
+**Sample Output of `docker network inspect app-network`:**
+```json
+{
+  "Name": "app-network",
+  "Id": "jkl012345678",
+  "Created": "2024-01-15T10:00:00.000Z",
+  "Scope": "local",
+  "Driver": "bridge",
+  "EnableIPv6": false,
+  "IPAM": {
+    "Driver": "default",
+    "Config": [
+      {
+        "Subnet": "172.19.0.0/16",
+        "Gateway": "172.19.0.1"
+      }
+    ]
+  },
+  "Internal": false,
+  "Attachable": false,
+  "Containers": {},
+  "Options": {}
+}
+```
+
+### Test Connectivity Between Containers
+
+```bash
+# Run two containers on same network
+docker run -d --name container1 --network app-network alpine/socat sleep 3600
+docker run -d --name container2 --network app-network alpine/socat sleep 3600
+
+# Test ping connectivity
+docker exec container1 ping -c 3 container2
+
+# Test with busybox that has ping
+docker run --rm --network app-network busybox ping -c 3 container1
+```
+
+**Expected Output:**
+```
+PING container2 (172.19.0.3): 56 data bytes
+64 bytes from 172.19.0.3: seq=0 ttl=64 time=0.123 ms
+64 bytes from 172.19.0.3: seq=1 ttl=64 time=0.156 ms
+64 bytes from 172.19.0.3: seq=2 ttl=64 time=0.142 ms
+
+--- container2 ping statistics ---
+3 packets transmitted, 3 packets received, 0% packet loss
+```
+
+## 2. Multi-container Communication
+
+### Run MongoDB with Named Volume
+
+```bash
+# Create network for MongoDB stack
+docker network create mongo-network
+
+# Create named volume for MongoDB data
+docker volume create mongo-data
+
+# Run MongoDB container
+docker run -d \
+  --name mongodb \
+  --network mongo-network \
+  -v mongo-data:/data/db \
+  -p 27017:27017 \
+  --restart unless-stopped \
+  mongo:7
+
+# Wait for MongoDB to start
+sleep 10
+
+# Test MongoDB connection
+docker exec mongodb mongosh --eval "db.version()"
+```
+
+### Run Mongo Express (Web Interface)
+
+```bash
+# Run Mongo Express with environment variables
+docker run -d \
+  --name mongo-express \
+  --network mongo-network \
+  -p 8081:8081 \
+  -e ME_CONFIG_MONGODB_SERVER=mongodb \
+  -e ME_CONFIG_MONGODB_PORT=27017 \
+  -e ME_CONFIG_BASICAUTH_USERNAME=admin \
+  -e ME_CONFIG_BASICAUTH_PASSWORD=password \
+  --restart unless-stopped \
+  mongo-express
+```
+
+**Environment Variables:**
+- `ME_CONFIG_MONGODB_SERVER` - MongoDB hostname (uses Docker DNS)
+- `ME_CONFIG_MONGODB_PORT` - MongoDB port
+- `ME_CONFIG_BASICAUTH_USERNAME` - Web UI username
+- `ME_CONFIG_BASICAUTH_PASSWORD` - Web UI password
+
+### Run Node.js App Connecting to MongoDB
+
+```bash
+# Create simple Node.js app directory
+mkdir -p node-mongo-app
+cd node-mongo-app
+
+# Create package.json
+cat > package.json << 'EOF'
+{
+  "name": "node-mongo-app",
+  "version": "1.0.0",
+  "main": "app.js",
+  "dependencies": {
+    "mongodb": "^6.0.0"
+  }
+}
+EOF
+
+# Create app.js
+cat > app.js << 'EOF'
+const { MongoClient } = require('mongodb');
+
+const uri = process.env.MONGODB_URI || 'mongodb://mongodb:27017';
+const client = new MongoClient(uri);
+
+async function run() {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB!');
+    
+    const db = client.db('testdb');
+    const collection = db.collection('test');
+    
+    await collection.insertOne({ name: 'Test', timestamp: new Date() });
+    console.log('Document inserted');
+    
+    // Find documents
+    const docs = await collection.find({}).toArray();
+    console.log('Documents:', docs);
+    
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    await client.close();
+  }
+}
+
+run().catch(console.dir);
+EOF
+
+# Build Node.js app image
+docker build -t node-mongo-app .
+
+# Run Node.js app on same network
+docker run -d \
+  --name node-app \
+  --network mongo-network \
+  -e MONGODB_URI=mongodb://mongodb:27017 \
+  node-mongo-app
+```
+
+**Dockerfile for Node.js App:**
+```dockerfile
+FROM node:24-alpine
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY app.js ./
+CMD ["node", "app.js"]
+```
+
+### Test Container Communication
+
+```bash
+# View logs to verify connection
+docker logs node-app
+
+# Test MongoDB connectivity from mongo-express
+docker exec mongo-express ping mongodb
+
+# Check MongoDB logs
+docker logs mongodb
+
+# Verify all containers on same network
+docker network inspect mongo-network --format='{{range .Containers}}{{.Name}}: {{.IPv4Address}}{{"\n"}}{{end}}'
+```
+
+**Expected Output:**
+```
+Connected to MongoDB!
+Document inserted
+Documents: [ { _id: ObjectId('...'), name: 'Test', timestamp: ISODate('...') } ]
+```
+
+## 3. Volume Types and Data Persistence
+
+### Named Volume for Database Data
+
+```bash
+# Create named volume
+docker volume create db-data
+
+# Inspect volume
+docker volume inspect db-data
+
+# Use in container
+docker run -d \
+  --name db-with-volume \
+  -v db-data:/var/lib/mysql \
+  mysql:8
+
+# Add data to database
+docker exec db-with-volume mysql -uroot -proot -e "CREATE TABLE test (id INT);"
+
+# Stop and remove container
+docker stop db-with-volume
+docker rm db-with-volume
+
+# Create new container with same volume
+docker run -d \
+  --name db-new \
+  -v db-data:/var/lib/mysql \
+  mysql:8
+
+# Verify data persisted
+docker exec db-new mysql -uroot -proot -e "SHOW TABLES;"
+```
+
+**Expected Output:**
+```
+Database
+test
+```
+
+### Bind Mount for Code Sharing (Development)
+
+```bash
+# Create project directory
+mkdir -p /tmp/dev-app
+echo "console.log('Hello from bind mount!');" > /tmp/dev-app/app.js
+
+# Run container with bind mount
+docker run -d \
+  --name dev-container \
+  -v /tmp/dev-app:/app \
+  -w /app \
+  node:24-alpine \
+  sh -c "while true; do cat app.js; sleep 5; done"
+
+# Modify file on host
+echo "console.log('Updated code!');" >> /tmp/dev-app/app.js
+
+# See changes in container (after 5 seconds)
+docker logs dev-container
+```
+
+**Bind Mount vs Volume:**
+- **Bind Mount**: Host path mounted directly (`-v /host/path:/container/path`)
+- **Named Volume**: Docker-managed storage (`-v volume-name:/container/path`)
+
+### Tmpfs Mount for Temporary Data
+
+```bash
+# Run container with tmpfs mount
+docker run -d \
+  --name tmpfs-test \
+  --tmpfs /tmp:size=100m \
+  alpine/socat \
+  sh -c "echo 'temp data' > /tmp/test.txt && cat /tmp/test.txt && sleep 3600"
+
+# Verify tmpfs mount
+docker exec tmpfs-test mount | grep tmpfs
+
+# Check data exists
+docker exec tmpfs-test cat /tmp/test.txt
+
+# Stop and remove container
+docker stop tmpfs-test
+docker rm tmpfs-test
+
+# Create new container - data is gone
+docker run -d \
+  --name tmpfs-new \
+  --tmpfs /tmp:size=100m \
+  alpine/socat sleep 3600
+
+# Verify data is lost
+docker exec tmpfs-new cat /tmp/test.txt 2>&1 || echo "File not found - tmpfs data is ephemeral"
+```
+
+**Expected Output:**
+```
+cat: can't open '/tmp/test.txt': No such file or directory
+File not found - tmpfs data is ephemeral
+```
+
+### Test Data Persistence
+
+```bash
+# Create container with named volume
+docker run -d \
+  --name persist-test \
+  -v persist-volume:/data \
+  alpine/socat \
+  sh -c "echo 'persistent data' > /data/file.txt && sleep 3600"
+
+# Verify data
+docker exec persist-test cat /data/file.txt
+
+# Stop container
+docker stop persist-test
+
+# Start again
+docker start persist-test
+
+# Verify data still exists
+docker exec persist-test cat /data/file.txt
+
+# Remove container (volume persists)
+docker rm persist-test
+
+# Create new container with same volume
+docker run --rm -v persist-volume:/data alpine cat /data/file.txt
+```
+
+## 4. Network Isolation Testing
+
+### Create Two Separate Networks
+
+```bash
+# Create isolated networks
+docker network create isolated-network-1
+docker network create isolated-network-2
+
+# Verify networks created
+docker network ls | grep isolated
+```
+
+### Run Containers on Different Networks
+
+```bash
+# Run container on network 1
+docker run -d \
+  --name container-net1 \
+  --network isolated-network-1 \
+  alpine/socat sleep 3600
+
+# Run container on network 2
+docker run -d \
+  --name container-net2 \
+  --network isolated-network-2 \
+  alpine/socat sleep 3600
+```
+
+### Demonstrate Network Isolation
+
+```bash
+# Try to ping from container-net1 to container-net2
+docker exec container-net1 ping -c 2 container-net2
+```
+
+**Expected Output (isolation demonstrated):**
+```
+ping: bad address 'container-net2'
+```
+
+**Explanation:** Containers on different networks cannot communicate by default.
+
+### Connect Container to Multiple Networks
+
+```bash
+# Connect container-net1 to both networks
+docker network connect isolated-network-2 container-net1
+
+# Inspect container networks
+docker inspect container-net1 --format='{{range $key, $value := .NetworkSettings.Networks}}{{$key}}: {{println}}{{end}}'
+
+# Now ping should work
+docker exec container-net1 ping -c 2 container-net2
+
+# Verify from other direction
+docker exec container-net2 ping -c 2 container-net1
+```
+
+**Expected Output (after connecting):**
+```
+PING container-net2 (172.21.0.3): 56 data bytes
+64 bytes from 172.21.0.3: seq=0 ttl=64 time=0.123 ms
+64 bytes from 172.21.0.3: seq=1 ttl=64 time=0.156 ms
+```
+
+### Disconnect Container from Network
+
+```bash
+# Disconnect from network 1
+docker network disconnect isolated-network-1 container-net1
+
+# Verify isolation restored
+docker exec container-net2 ping -c 2 container-net1
+```
+
+**Expected Output:**
+```
+ping: bad address 'container-net1'
+```
+ 
+## Volume Types Explanation
+
+### 1. Named Volumes
+
+**Definition:** Docker-managed storage volumes with a name reference.
+
+**Characteristics:**
+- Managed by Docker (`/var/lib/docker/volumes/` on Linux)
+- Persist after container removal
+- Can be shared between containers
+- Best for production data (databases, persistent state)
+
+**Commands:**
+```bash
+docker volume create my-volume
+docker run -v my-volume:/data my-image
+docker volume inspect my-volume
+docker volume rm my-volume
+```
+
+**Use Cases:**
+- Database storage (MongoDB, PostgreSQL, MySQL)
+- Application state that must persist
+- Shared data between containers
+
+### 2. Bind Mounts
+
+**Definition:** Direct mapping of host filesystem path to container path.
+
+**Characteristics:**
+- Host path must exist
+- Container can modify host files
+- Depends on host filesystem structure
+- Best for development (code hot-reload)
+
+**Commands:**
+```bash
+docker run -v /host/path:/container/path my-image
+# Or with bind mount syntax:
+docker run --mount type=bind,source=/host/path,target=/container/path my-image
+```
+
+**Use Cases:**
+- Development (code changes reflected immediately)
+- Configuration files
+- Log file access
+
+### 3. Tmpfs Mounts
+
+**Definition:** In-memory filesystem mount (RAM-based).
+
+**Characteristics:**
+- Data stored in memory (not disk)
+- Lost when container stops
+- Fast access
+- Size-limited
+
+**Commands:**
+```bash
+docker run --tmpfs /tmp:size=100m my-image
+# Or:
+docker run --mount type=tmpfs,destination=/tmp,tmpfs-size=100m my-image
+```
+
+**Use Cases:**
+- Temporary/sensitive data
+- Cache data
+- Session data
+- Data that should not persist
+
+## Test Results
+
+### Network List Output
+
+```bash
+docker network ls
+```
+
+```
+NETWORK ID     NAME                  DRIVER    SCOPE
+abc123456789   bridge                bridge    local
+def456789012   host                  host      local
+ghi789012345   none                  null      local
+jkl012345678   app-network           bridge    local
+mno345678901   custom-network        bridge    local
+pqr678901234   mongo-network         bridge    local
+stu901234567   isolated-network-1    bridge    local
+vwx234567890   isolated-network-2    bridge    local
+```
+
+### Volume List Output
+
+```bash
+docker volume ls
+```
+
+```
+DRIVER    VOLUME NAME
+local     db-data
+local     mongo-data
+local     persist-volume
+```
+
+### Container Communication Tests
+
+```bash
+# MongoDB stack communication
+docker exec mongo-express ping mongodb
+# Output: PING mongodb (172.20.0.3): 56 data bytes ... (successful)
+
+# Network isolation test (before connecting)
+docker exec container-net1 ping container-net2
+# Output: ping: bad address 'container-net2'
+
+# Network isolation test (after connecting)
+docker exec container-net1 ping container-net2
+# Output: 64 bytes from 172.22.0.3: seq=0 ttl=64 time=0.123 ms (successful)
+```
+
+### Data Persistence Test
+
+```bash
+# Create data
+docker exec persist-test cat /data/file.txt
+# Output: persistent data
+
+# After stop/start
+docker exec persist-test cat /data/file.txt
+# Output: persistent data
+
+# After container removal (new container with same volume)
+docker run --rm -v persist-volume:/data alpine cat /data/file.txt
+# Output: persistent data
+```
+
+## Cleanup Commands
+
+```bash
+# Stop all containers
+docker stop mongodb mongo-express node-app container-net1 container-net2 persist-test
+
+# Remove containers
+docker rm mongodb mongo-express node-app container-net1 container-net2 persist-test
+
+# Remove networks
+docker network rm mongo-network isolated-network-1 isolated-network-2 app-network custom-network
+
+# Remove volumes
+docker volume rm mongo-data db-data persist-volume
+
+# Cleanup all at once
+docker system prune -a --volumes -f
+```
+
+## Summary
+
+This task demonstrated:
+
+1. **Custom Networks**: Created bridge networks with custom configurations for container isolation and communication.
+
+2. **Multi-container Communication**: Set up MongoDB stack with proper networking using service names for DNS resolution.
+
+3. **Volume Types**:
+   - **Named volumes** for persistent database storage
+   - **Bind mounts** for development code sharing
+   - **Tmpfs mounts** for temporary in-memory data
+
+4. **Network Isolation**: Demonstrated how containers on different networks cannot communicate, and how to connect containers to multiple networks.
+
+**Key Takeaways:**
+- Docker networks provide DNS-based service discovery
+- Named volumes are managed by Docker and persist across container lifecycles
+- Bind mounts are ideal for development workflows
+- Tmpfs mounts provide secure, fast, ephemeral storage
+- Network isolation is a powerful security feature
