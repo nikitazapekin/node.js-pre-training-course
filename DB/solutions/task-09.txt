@@ -1,0 +1,27 @@
+# Task 09: Implementing an Audit Log Trigger (Raw SQL)
+
+## Solution Location
+- SQL File: `DB/solutions/task-09.sql`
+
+## Description
+
+I implemented an audit logging system using PostgreSQL triggers that automatically logs changes to the `todos` table.
+
+### What Was Done:
+
+1. **Created `audit_log` Table:**
+   - `id`: SERIAL PRIMARY KEY (auto-incrementing)
+   - `todo_id`: INTEGER NOT NULL (references the affected todo)
+   - `action`: TEXT NOT NULL ('UPDATE' or 'DELETE')
+   - `changed_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+2. **Created UPDATE Trigger:**
+   - Function `log_todo_update()`: Inserts a record into `audit_log` with action 'UPDATE' when a todo is updated
+   - Trigger `todo_update_trigger`: Fires AFTER UPDATE on the `todos` table
+
+3. **Created DELETE Trigger:**
+   - Function `log_todo_delete()`: Inserts a record into `audit_log` with action 'DELETE' when a todo is deleted
+   - Trigger `todo_delete_trigger`: Fires AFTER DELETE on the `todos` table
+
+### Issues Encountered:
+No issues encountered. The triggers use PostgreSQL's standard trigger syntax with `plpgsql` language.
