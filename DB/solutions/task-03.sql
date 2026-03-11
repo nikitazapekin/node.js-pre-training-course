@@ -105,18 +105,3 @@ SELECT * FROM todos
 WHERE status = 'active'
 ORDER BY created_at DESC
 LIMIT 10 OFFSET 0;
-
--- ============================================================================
--- NOTES
--- ============================================================================
--- - ILIKE is PostgreSQL-specific for case-insensitive matching
--- - For MySQL, use LIKE with LOWER() function: WHERE LOWER(title) LIKE '%meeting%'
--- - ORDER BY ASC = ascending (oldest/smallest first)
--- - ORDER BY DESC = descending (newest/largest first)
--- - LIKE patterns:
---   - '%word%' - contains 'word'
---   - 'word%' - starts with 'word'
---   - '%word' - ends with 'word'
---   - '_ord' - matches any single character followed by 'ord'
--- - Use indexes on frequently filtered/sorted columns for better performance
--- - Combine WHERE, ORDER BY, LIMIT for efficient pagination and filtering

@@ -29,7 +29,7 @@ app.post('/todos', (req, res) => {
   res.status(201).json(newTodo);
 });
 
-// Search route MUST be before /todos/:id to avoid conflict
+
 app.get('/todos/search', (req, res) => {
   const { completed } = req.query;
 

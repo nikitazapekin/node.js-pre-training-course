@@ -107,15 +107,4 @@ WHERE title = 'Test CRUD operations';
 
 -- 6. Read: Verify the deletion (should return no rows)
 SELECT * FROM todos WHERE title = 'Test CRUD operations';
-
--- ============================================================================
--- NOTES
--- ============================================================================
--- - Always use WHERE clause with UPDATE and DELETE to avoid modifying/deleting all rows
--- - The user_id foreign key must reference an existing user in the users table
--- - ON DELETE CASCADE in the schema ensures todos are removed when their user is deleted
--- - Use transactions for multiple related operations:
---   BEGIN;
---   UPDATE todos SET status = 'completed' WHERE id = 1;
---   UPDATE todos SET status = 'active' WHERE id = 2;
---   COMMIT;
+ 

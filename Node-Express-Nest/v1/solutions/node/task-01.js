@@ -67,14 +67,7 @@ class MessageSystem extends EventEmitter {
     }
   }
 
-  /**
-   * Remove a user from the system
-   *
-   * Remove user from users set
-   * Create and emit user-left event
-   *
-   * @param {string} username - Username to remove
-   */
+  
   removeUser(username) {
     if (this.users.has(username)) {
       this.users.delete(username);
@@ -87,37 +80,17 @@ class MessageSystem extends EventEmitter {
       });
     }
   }
-
-  /**
-   * Get all active users
-   *
-   * Convert users Set to Array and return
-   *
-   * @returns {array} Array of usernames
-   */
+ 
   getActiveUsers() {
     return Array.from(this.users);
   }
-
-  /**
-   * Clear all messages
-   *
-   * Clear messages array
-   * Emit history-cleared event
-   */
+ 
   clearHistory() {
     const clearedCount = this.messages.length;
     this.messages = [];
     this.emit("history-cleared", { clearedCount, timestamp: new Date() });
   }
-
-  /**
-   * Get system statistics
-   *
-   * Calculate and return statistics
-   *
-   * @returns {object} System stats
-   */
+ 
   getStats() {
     const statsByType = {};
     for (const msg of this.messages) {
@@ -132,6 +105,5 @@ class MessageSystem extends EventEmitter {
     };
   }
 }
-
-// Export the MessageSystem class
+ 
 module.exports = MessageSystem;

@@ -248,18 +248,7 @@ async function createTestFiles(testDir = "./test-data") {
  
 function logWithPhase(message, phase = "unknown") {
   const timestamp = new Date().toISOString();
-  const phaseEmojis = {
-    timers: "⏰",
-    "pending callbacks": "📋",
-    poll: "📥",
-    check: "✅",
-    "close callbacks": "🚪",
-    microtask: "⚡",
-    unknown: "📝"
-  };
-
-  const emoji = phaseEmojis[phase] || phaseEmojis.unknown;
-  console.log(`${emoji} [${timestamp}] [${phase.toUpperCase()}] ${message}`);
+  console.log(`[${timestamp}] [${phase.toUpperCase()}] ${message}`);
 }
 
 module.exports = {

@@ -36,14 +36,14 @@
 CREATE DATABASE todo_app;
 
 -- Connect to the new database:
--- \c todo_app;
+-- todo_app;
 
 -- ============================================================================
 -- STEP 4: Create the Tables
 -- ============================================================================
 
 -- Connect to todo_app database first
--- \c todo_app;
+-- todo_app;
 
 -- Create the "users" table
 CREATE TABLE users (
