@@ -1,5 +1,11 @@
 # Task 07: Orchestrating Multiple Services with Docker Compose - Solution
 
+## Git Commit
+
+```bash
+git commit -m "Add docker-compose configuration"
+```
+
 ## Complete docker-compose.yml File
 
 ```yaml
@@ -184,25 +190,7 @@ curl http://localhost:3000/data
   {"id": 3, "name": "Item 3", "description": "Third item"}
 ]
 ```
-
-## Service Architecture
-
-```
-┌─────────────────┐
-│     pgAdmin     │  Port 8080
-│  (Database UI)  │
-└────────┬────────┘
-         │
-         │ app-network
-         │
-┌────────▼────────┐     ┌─────────────────┐
-│    PostgreSQL   │◄────│   Node.js API   │  Port 3000
-│   (Database)    │     │   (Express)     │
-│   Port 5432     │     │                 │
-│  Volume: data   │     └────────┬────────┘
-└─────────────────┘              │
-                          http://localhost:3000
-```
+ 
 
 ## Challenges Encountered
 

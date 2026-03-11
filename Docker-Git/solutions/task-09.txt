@@ -1,5 +1,11 @@
 # Task 09: Mastering Docker Commands and Image Management - Solution
 
+## Git Merge
+
+```bash
+git merge feature-branch
+```
+
 ## Overview
 
 This task covers essential Docker commands for:

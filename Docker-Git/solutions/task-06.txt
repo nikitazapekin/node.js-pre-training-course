@@ -1,5 +1,11 @@
 # Task 06: Git Rebase and Clean History Management - Solution
 
+## Initialize Git Repository
+
+```bash
+git init
+```
+
 ## Commands Used for Interactive Rebase
 
 ### 1. Create Feature Branch with Multiple Commits
